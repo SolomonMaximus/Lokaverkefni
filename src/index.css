@@ -60,3 +60,70 @@ body {
 .menu p:hover {
   text-decoration: underline;
 }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  background: white;
+  border: 1px solid beige;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.card-image {
+  height: 120px;
+  background: beige;
+  border: 1px solid rgb(194, 194, 157);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #524f4f;
+}
+
+.card h3 {
+  margin: 0 0 6px 0;
+}
+
+.card p {
+  margin: 0 0 10px 0;
+  color: gray;
+}
+
+.card button {
+  padding: 8px 10px;
+  border: none;
+  background: black;
+  color: white;
+  cursor: pointer;
+}
+
+.detail {
+  background: white;
+  border: 1px solid beige;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.detail-image {
+  height: 180px;
+  background: rgb(238, 238, 203);
+  border: 1px solid beige;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: grey;
+}
