@@ -1,26 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getFeaturedRecipes } from "./api/mealdb";
 
 export default function App() {
   const [page, setPage] = useState("home");
-
   const [menuOpen, setMenuOpen] = useState(false);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
 
-  const recipes = [
-    { id: 1, title: "Pasta", description: "chicken pasta ,very good" },
-    { id: 2, title: "Soup", description: "warm and good for you" },
-    { id: 3, title: "Cake", description: "tasty cake" },
-    { id: 4, title: "Salad", description: "Healty for you" },
-  ];
+  useEffect(() => {
+    async function loadRecipes() {
+      if (page !== "recipes") return;
 
-  const [selectedRecipe, setSelectedRecipe] = useState<null | {
-    id: Number;
-    title: string;
-    description: String;
-  }>(null);
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await getFeaturedRecipes();
+        if (data && data.meals) {
+          setRecipes(data.meals);
+        } else {
+          setRecipes([]);
+        }
+      } catch (error) {
+        setError("Something went wrong loading recipes.");
+      }
+
+      setLoading(false);
+    }
+
+    loadRecipes();
+  }, [page]);
 
   function goHome() {
     setPage("home");
     setMenuOpen(false);
+    setSelectedRecipe(null);
   }
 
   function goRecipes() {
@@ -71,38 +87,49 @@ export default function App() {
           <>
             <h1>Recipes</h1>
 
-            {selectedRecipe === null ? (
+            {loading && <p>Loading...</p>}
+            {error !== "" && <p>{error}</p>}
+
+            {selectedRecipe === null && (
               <div className="card-grid">
-                {recipes.map((recipe) => (
-                  <div key={recipe.id} className="card">
-                    <div
-                      className="card-image"
+                {recipes.map((recipe: any) => (
+                  <div key={recipe.idMeal} className="card">
+                    <img
+                      className="card-img"
+                      src={recipe.strMealThumb}
+                      alt={recipe.strMeal}
                       onClick={() => setSelectedRecipe(recipe)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      Image
-                    </div>
+                    />
 
                     <h3
                       onClick={() => setSelectedRecipe(recipe)}
                       style={{ cursor: "pointer" }}
                     >
-                      {recipe.title}
+                      {recipe.strMeal}
                     </h3>
-
-                    <p>{recipe.description}</p>
                   </div>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {selectedRecipe && (
               <div className="detail">
-                <div className="detail-image">Image</div>
-                <h2>{selectedRecipe.title}</h2>
-                <p>(Hérna kemur api datað)</p>
+                <img
+                  className="detail-img"
+                  src={selectedRecipe.strMealThumb}
+                  alt={selectedRecipe.strMeal}
+                />
+
+                <h2>{selectedRecipe.strMeal}</h2>
+                <p>
+                  <b>Category:</b> {selectedRecipe.strCategory}
+                </p>
+
+                <p>Instructions will show later.</p>
 
                 <p
                   onClick={() => setSelectedRecipe(null)}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
                 >
                   Back to recipes
                 </p>
@@ -111,9 +138,8 @@ export default function App() {
           </>
         )}
       </div>
-
       <div className="footer">
-        <p> Bon appétit</p>
+        <p>Bon appéttit</p>
       </div>
     </div>
   );
