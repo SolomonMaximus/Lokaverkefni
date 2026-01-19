@@ -73,11 +73,13 @@ body {
 
 .card-img {
   width: 100%;
-  height: 140px;
+  height: 200px;
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid beige;
   cursor: pointer;
+  object-position: center;
+  image-rendering: auto;
 }
 
 .card h3 {
@@ -120,4 +122,9 @@ body {
   border-radius: 6px;
   border: 1px solid beige;
   margin-bottom: 10px;
+}
+
+select {
+  padding: 6px;
+  margin-left: 6px;
 }

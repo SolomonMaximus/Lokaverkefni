@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { getFeaturedRecipes } from "./api/mealdb";
+import {
+  getCategories,
+  getRecipesByCategory,
+  getRecipeById,
+  searchRecipes,
+  getRandomRecipe,
+} from "./api/mealdb";
 
 export default function App() {
   const [page, setPage] = useState("home");
@@ -7,7 +13,42 @@ export default function App() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [category, setCategory] = useState("Beef");
+  const [selectedId, setSelectedId] = useState<any>(null);
+  const [recipeDetail, setRecipeDetail] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [noResults, setNoResults] = useState(false);
+  const [homeRecipes, setHomeRecipes] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadHomeRecipes() {
+      if (page !== "home") return;
+
+      try {
+        const first = await getRandomRecipe();
+        const second = await getRandomRecipe();
+        const third = await getRandomRecipe();
+        const fourth = await getRandomRecipe();
+        const fifth = await getRandomRecipe();
+        const sixth = await getRandomRecipe();
+
+        const list = [
+          first.meals[0],
+          second.meals[0],
+          third.meals[0],
+          fourth.meals[0],
+          fifth.meals[0],
+          sixth.meals[0],
+        ];
+        setHomeRecipes(list);
+      } catch (error) {
+        setHomeRecipes([]);
+      }
+    }
+
+    loadHomeRecipes();
+  }, [page]);
 
   useEffect(() => {
     async function loadRecipes() {
@@ -17,8 +58,8 @@ export default function App() {
       setError("");
 
       try {
-        const data = await getFeaturedRecipes();
-        if (data && data.meals) {
+        const data = await getRecipesByCategory(category);
+        if (data && Array.isArray(data.meals)) {
           setRecipes(data.meals);
         } else {
           setRecipes([]);
@@ -31,12 +72,13 @@ export default function App() {
     }
 
     loadRecipes();
-  }, [page]);
+  }, [page, category]);
 
   function goHome() {
     setPage("home");
     setMenuOpen(false);
-    setSelectedRecipe(null);
+    setSelectedId(null);
+    setRecipeDetail(null);
   }
 
   function goRecipes() {
@@ -46,6 +88,75 @@ export default function App() {
 
   function toggleMenu() {
     setMenuOpen(!menuOpen);
+  }
+
+  function clearSearch() {
+    setSearch("");
+    setNoResults(false);
+    setError("");
+  }
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await getCategories();
+        if (data && Array.isArray(data.meals)) {
+          setCategories(data.meals);
+        } else {
+          setCategories([]);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    async function loadDetail() {
+      if (!selectedId) return;
+
+      try {
+        const data = await getRecipeById(selectedId);
+        if (data && data.meals && data.meals[0]) {
+          setRecipeDetail(data.meals[0]);
+        }
+      } catch (error) {
+        setRecipeDetail(null);
+      }
+    }
+    loadDetail();
+  }, [selectedId]);
+
+  async function doSearch() {
+    if (search.trim() === "") return;
+
+    setPage("recipes");
+    setMenuOpen(false);
+
+    setLoading(true);
+    setError("");
+    setNoResults(false);
+
+    try {
+      const data = await searchRecipes(search);
+
+      if (data && data.meals) {
+        setRecipes(data.meals);
+        setNoResults(false);
+      } else {
+        setRecipes([]);
+        setNoResults(true);
+      }
+      setSelectedId(null);
+      setRecipeDetail(null);
+    } catch (error) {
+      setError("Search failed, Please try again.");
+      setRecipes([]);
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -66,6 +177,17 @@ export default function App() {
         >
           Bon appétit
         </div>
+
+        <div className="header-search">
+          <input
+            type="text"
+            value={search}
+            onChange={(error) => setSearch(error.target.value)}
+            placeholder="Search..."
+          ></input>
+
+          <button onClick={doSearch}>Search</button>
+        </div>
       </div>
 
       {menuOpen && (
@@ -78,8 +200,22 @@ export default function App() {
       <div className="content">
         {page === "home" && (
           <>
-            <h1>Hello world</h1>
-            <p>Þetta er síðan mín</p>
+            <h1>Welcome to the recipe site!</h1>
+
+            <h2>Popular recipes right now!</h2>
+
+            <div className="card-grid">
+              {homeRecipes.map((recipe: any) => (
+                <div key={recipe.idMeal} className="card">
+                  <img
+                    className="card-img"
+                    src={recipe.strMealThumb}
+                    alt={recipe.strMeal}
+                  />
+                  <h3>{recipe.strMeal}</h3>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -87,10 +223,60 @@ export default function App() {
           <>
             <h1>Recipes</h1>
 
+            <p>Choose Category</p>
+
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSelectedId(null);
+                setRecipeDetail(null);
+              }}
+            >
+              {categories.map((category: any) => (
+                <option key={category.strCategory} value={category.strCategory}>
+                  {category.strCategory}
+                </option>
+              ))}
+            </select>
+
             {loading && <p>Loading...</p>}
             {error !== "" && <p>{error}</p>}
 
-            {selectedRecipe === null && (
+            {noResults && (
+              <p>
+                No results found.{" "}
+                <span
+                  onClick={clearSearch}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Clear search
+                </span>
+              </p>
+            )}
+
+            {recipeDetail ? (
+              <div className="detail">
+                <img
+                  className="detail-img"
+                  src={recipeDetail.strMealThumb}
+                  alt={recipeDetail.strMeal}
+                />
+
+                <h2>{recipeDetail.strMeal}</h2>
+                <p>{recipeDetail.strInstructions}</p>
+
+                <p
+                  onClick={() => {
+                    setSelectedId(null);
+                    setRecipeDetail(null);
+                  }}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Back to recipes
+                </p>
+              </div>
+            ) : (
               <div className="card-grid">
                 {recipes.map((recipe: any) => (
                   <div key={recipe.idMeal} className="card">
@@ -98,11 +284,11 @@ export default function App() {
                       className="card-img"
                       src={recipe.strMealThumb}
                       alt={recipe.strMeal}
-                      onClick={() => setSelectedRecipe(recipe)}
+                      onClick={() => setSelectedId(recipe.idMeal)}
                     />
 
                     <h3
-                      onClick={() => setSelectedRecipe(recipe)}
+                      onClick={() => setSelectedId(recipe.idMeal)}
                       style={{ cursor: "pointer" }}
                     >
                       {recipe.strMeal}
@@ -111,33 +297,10 @@ export default function App() {
                 ))}
               </div>
             )}
-
-            {selectedRecipe && (
-              <div className="detail">
-                <img
-                  className="detail-img"
-                  src={selectedRecipe.strMealThumb}
-                  alt={selectedRecipe.strMeal}
-                />
-
-                <h2>{selectedRecipe.strMeal}</h2>
-                <p>
-                  <b>Category:</b> {selectedRecipe.strCategory}
-                </p>
-
-                <p>Instructions will show later.</p>
-
-                <p
-                  onClick={() => setSelectedRecipe(null)}
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
-                >
-                  Back to recipes
-                </p>
-              </div>
-            )}
           </>
         )}
       </div>
+
       <div className="footer">
         <p>Bon appéttit</p>
       </div>
