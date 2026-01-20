@@ -29,6 +29,8 @@ body {
 .content {
   padding: 20px;
   flex: 1;
+  max-width: 1100px;
+  justify-content: center;
 }
 
 .page {
@@ -54,14 +56,9 @@ body {
 
 .card-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-@media (min-width: 700px) {
-  .card-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  justify-content: center;
 }
 
 .card {
@@ -69,11 +66,15 @@ body {
   border: 1px solid beige;
   padding: 12px;
   border-radius: 8px;
+  justify-content: center;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+  max-width: 320px;
 }
 
 .card-img {
   width: 100%;
-  height: 200px;
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid beige;
